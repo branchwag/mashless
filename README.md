@@ -39,17 +39,50 @@ estimate of wasted keystrokes), the ranked tips, and a motion cheat-sheet.
 - `:Vimprove` — open the latest report in a new tab.
 - `:VimproveReport` — generate and open a report now, without quitting.
 
-## Install (lazy.nvim)
+## Install
+
+vimprove runs straight from a local clone — there is nothing to publish and
+nothing to download from a registry. Clone the repo wherever you like, then
+point your plugin manager at that directory.
+
+**1. Clone it somewhere.** Any path works; pick one and remember it:
+
+```sh
+git clone <repo-url> ~/vimprove
+```
+
+**2. Tell your plugin manager to load it from that directory.**
+
+### lazy.nvim
 
 ```lua
 {
-  dir = vim.fn.expand('~/CodingStuff/vimprove'),
+  dir = vim.fn.expand('~/vimprove'), -- the path you cloned into
   name = 'vimprove',
-  lazy = false,
+  lazy = false,                      -- load at startup so motions are recorded from the first key
   config = function()
     require('vimprove').setup()
   end,
 }
+```
+
+The `dir` key tells lazy.nvim to use a local directory instead of cloning from
+a remote. Just make sure the path matches step 1.
+
+### packer.nvim
+
+```lua
+use {
+  '~/vimprove', -- the path you cloned into
+  config = function() require('vimprove').setup() end,
+}
+```
+
+### Plain `:set runtimepath` (no plugin manager)
+
+```lua
+vim.opt.runtimepath:append(vim.fn.expand('~/vimprove'))
+require('vimprove').setup()
 ```
 
 ## Configuration
