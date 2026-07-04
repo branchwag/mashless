@@ -1,17 +1,17 @@
--- vimprove
+-- mashless
 -- Records your Vim motions during a session and, when you quit Neovim,
 -- writes a Markdown readout of what you could have done more efficiently.
 
-local recorder = require('vimprove.recorder')
-local analyzer = require('vimprove.analyzer')
-local report = require('vimprove.report')
+local recorder = require('mashless.recorder')
+local analyzer = require('mashless.analyzer')
+local report = require('mashless.report')
 
 local M = {}
 
 M.config = {
   enabled = true,
   -- Where session reports are written.
-  output_dir = vim.fn.stdpath('data') .. '/vimprove',
+  output_dir = vim.fn.stdpath('data') .. '/mashless',
   -- Skip writing a report when fewer than this many keystrokes were recorded.
   min_keys = 20,
   -- Run-length thresholds before a streak counts as inefficient.
@@ -47,7 +47,7 @@ local function latest_report()
   if M.last_report and vim.fn.filereadable(M.last_report) == 1 then
     return M.last_report
   end
-  local files = vim.fn.glob(M.config.output_dir .. '/vimprove-*.md', false, true)
+  local files = vim.fn.glob(M.config.output_dir .. '/mashless-*.md', false, true)
   if #files == 0 then
     return nil
   end
@@ -69,7 +69,7 @@ function M.setup(opts)
 
   recorder.start()
 
-  local grp = vim.api.nvim_create_augroup('Vimprove', { clear = true })
+  local grp = vim.api.nvim_create_augroup('Mashless', { clear = true })
 
   -- Keep the latest cursor position fresh so the final motion run has an
   -- accurate end point.
@@ -113,32 +113,32 @@ function M.setup(opts)
       callback = function()
         vim.schedule(function()
           if latest_report() then
-            vim.notify('vimprove: last session report ready — :Vimprove to view', vim.log.levels.INFO)
+            vim.notify('mashless: last session report ready — :Mashless to view', vim.log.levels.INFO)
           end
         end)
       end,
     })
   end
 
-  -- :Vimprove        open the newest report
-  vim.api.nvim_create_user_command('Vimprove', function()
+  -- :Mashless        open the newest report
+  vim.api.nvim_create_user_command('Mashless', function()
     local path = latest_report()
     if path then
       open_report(path)
     else
-      vim.notify('vimprove: no reports yet — try :VimproveReport', vim.log.levels.WARN)
+      vim.notify('mashless: no reports yet — try :MashlessReport', vim.log.levels.WARN)
     end
-  end, { desc = 'Open the latest vimprove report' })
+  end, { desc = 'Open the latest mashless report' })
 
-  -- :VimproveReport  generate a report now, mid-session, and open it
-  vim.api.nvim_create_user_command('VimproveReport', function()
+  -- :MashlessReport  generate a report now, mid-session, and open it
+  vim.api.nvim_create_user_command('MashlessReport', function()
     local path = generate('manual')
     if path then
       open_report(path)
     else
-      vim.notify('vimprove: nothing recorded yet', vim.log.levels.WARN)
+      vim.notify('mashless: nothing recorded yet', vim.log.levels.WARN)
     end
-  end, { desc = 'Generate a vimprove report now' })
+  end, { desc = 'Generate a mashless report now' })
 end
 
 return M

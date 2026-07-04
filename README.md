@@ -1,4 +1,4 @@
-# vimprove
+# mashless
 
 A Neovim plugin that watches the Vim motions you actually use, and when you
 quit Neovim it writes a Markdown readout of what you could have done more
@@ -28,27 +28,27 @@ instead of holding `j`.
 
 ## Reports
 
-Written to `stdpath('data')/vimprove/` — on Linux that is
-`~/.local/share/nvim/vimprove/vimprove-YYYY-MM-DD-HHMMSS.md`.
+Written to `stdpath('data')/mashless/` — on Linux that is
+`~/.local/share/nvim/mashless/mashless-YYYY-MM-DD-HHMMSS.md`.
 
 Each report has a summary (session length, keystrokes, an efficiency score, an
 estimate of wasted keystrokes), the ranked tips, and a motion cheat-sheet.
 
 ## Commands
 
-- `:Vimprove` — open the latest report in a new tab.
-- `:VimproveReport` — generate and open a report now, without quitting.
+- `:Mashless` — open the latest report in a new tab.
+- `:MashlessReport` — generate and open a report now, without quitting.
 
 ## Install
 
-vimprove runs straight from a local clone — there is nothing to publish and
+mashless runs straight from a local clone — there is nothing to publish and
 nothing to download from a registry. Clone the repo wherever you like, then
 point your plugin manager at that directory.
 
 **1. Clone it somewhere.** Any path works; pick one and remember it:
 
 ```sh
-git clone <repo-url> ~/vimprove
+git clone <repo-url> ~/mashless
 ```
 
 **2. Tell your plugin manager to load it from that directory.**
@@ -57,11 +57,11 @@ git clone <repo-url> ~/vimprove
 
 ```lua
 {
-  dir = vim.fn.expand('~/vimprove'), -- the path you cloned into
-  name = 'vimprove',
+  dir = vim.fn.expand('~/mashless'), -- the path you cloned into
+  name = 'mashless',
   lazy = false,                      -- load at startup so motions are recorded from the first key
   config = function()
-    require('vimprove').setup()
+    require('mashless').setup()
   end,
 }
 ```
@@ -73,24 +73,24 @@ a remote. Just make sure the path matches step 1.
 
 ```lua
 use {
-  '~/vimprove', -- the path you cloned into
-  config = function() require('vimprove').setup() end,
+  '~/mashless', -- the path you cloned into
+  config = function() require('mashless').setup() end,
 }
 ```
 
 ### Plain `:set runtimepath` (no plugin manager)
 
 ```lua
-vim.opt.runtimepath:append(vim.fn.expand('~/vimprove'))
-require('vimprove').setup()
+vim.opt.runtimepath:append(vim.fn.expand('~/mashless'))
+require('mashless').setup()
 ```
 
 ## Configuration
 
 ```lua
-require('vimprove').setup({
+require('mashless').setup({
   enabled = true,
-  output_dir = vim.fn.stdpath('data') .. '/vimprove',
+  output_dir = vim.fn.stdpath('data') .. '/mashless',
   min_keys = 20,   -- skip the report for trivially short sessions
   vmin = 3,        -- consecutive j/k before it counts as a streak
   hmin = 5,        -- consecutive h/l before it counts as a streak
@@ -107,5 +107,5 @@ of identical keys; a long run of a one-step motion is the core signal for
 "this could have been a single counted jump or a smarter motion". The report
 module renders the findings as Markdown.
 
-Recording is wrapped in `pcall` throughout — a bug in vimprove can never break
+Recording is wrapped in `pcall` throughout — a bug in mashless can never break
 your editing.

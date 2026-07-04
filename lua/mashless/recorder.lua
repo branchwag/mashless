@@ -1,4 +1,4 @@
--- vimprove.recorder
+-- mashless.recorder
 -- Captures normal/visual-mode keystrokes (with cursor positions) for the
 -- current Neovim session. Insert-mode keys are ignored except arrow keys.
 
@@ -27,7 +27,7 @@ local KEEP_TEXT = {
   ['E'] = true,
 }
 
-local ns = vim.api.nvim_create_namespace('vimprove_on_key')
+local ns = vim.api.nvim_create_namespace('mashless_on_key')
 
 local function now_ms()
   return (vim.uv or vim.loop).now()

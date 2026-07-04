@@ -1,4 +1,4 @@
--- vimprove.analyzer
+-- mashless.analyzer
 -- Turns a recorded session into structured findings about inefficient motions.
 
 local M = {}
