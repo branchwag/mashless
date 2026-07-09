@@ -1,0 +1,22 @@
+[package]
+name = "mashless"
+version = "0.1.0"
+edition = "2021"
+description = "A Neovim motion-efficiency coach — Rust core"
+license = "MIT"
+
+[[bin]]
+name = "mashless"
+path = "src/main.rs"
+
+[dependencies]
+nvim-rs = { version = "0.9.2", default-features = false, features = ["use_tokio"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "fs", "sync"] }
+async-trait = "0.1"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+webbrowser = "1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true

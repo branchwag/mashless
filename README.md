@@ -1,9 +1,13 @@
 # mashless
 
 A Neovim plugin that watches the Vim motions you actually use, and when you
-quit Neovim it writes a Markdown readout of what you could have done more
-efficiently — like reaching for `f{char}` instead of mashing `l`, or `12G`
-instead of holding `j`.
+quit Neovim it opens an HTML readout **in your browser** showing what you could
+have done more efficiently — like reaching for `f{char}` instead of mashing
+`l`, or `12G` instead of holding `j`.
+
+The brain is a **Rust** binary; a thin Lua shim only does the things that must
+happen inside Neovim (capturing keys, autocmds, commands) and forwards every
+event to Rust over msgpack-RPC.
 
 ## What it does
 
@@ -11,7 +15,8 @@ instead of holding `j`.
   text is ignored; insert-mode arrow keys are noticed).
 - Tracks cursor positions, so suggestions are concrete: *"that run moved you 9
   lines — `9j` does it in 3 keystrokes"*.
-- On `:q`, analyzes the session and writes a timestamped report.
+- On `:q`, analyzes the session, writes a timestamped HTML report, and opens it
+  in your default browser.
 
 ### What it flags
 
@@ -29,27 +34,38 @@ instead of holding `j`.
 ## Reports
 
 Written to `stdpath('data')/mashless/` — on Linux that is
-`~/.local/share/nvim/mashless/mashless-YYYY-MM-DD-HHMMSS.md`.
+`~/.local/share/nvim/mashless/mashless-YYYY-MM-DD-HHMMSS.html` — and opened in
+your default browser via the OS handler (`xdg-open` / `open` / `start`).
 
-Each report has a summary (session length, keystrokes, an efficiency score, an
-estimate of wasted keystrokes), the ranked tips, and a motion cheat-sheet.
+Each report is a self-contained, theme-aware HTML page: a summary (session
+length, keystrokes, an efficiency score, an estimate of wasted keystrokes), the
+ranked tips, and a motion cheat-sheet.
 
 ## Commands
 
-- `:Mashless` — open the latest report in a new tab.
+- `:Mashless` — open the latest report in the browser.
 - `:MashlessReport` — generate and open a report now, without quitting.
+
+## Requirements
+
+- Neovim 0.10+ (for `vim.on_key`'s `typed` argument).
+- A Rust toolchain (`cargo`) to build the binary once.
 
 ## Install
 
-mashless runs straight from a local clone — there is nothing to publish and
-nothing to download from a registry. Clone the repo wherever you like, then
-point your plugin manager at that directory.
+mashless runs straight from a local clone. Clone it, **build the Rust binary
+once**, then point your plugin manager at the directory.
 
-**1. Clone it somewhere.** Any path works; pick one and remember it:
+**1. Clone it somewhere and build.**
 
 ```sh
 git clone <repo-url> ~/mashless
+cd ~/mashless
+cargo build --release   # produces target/release/mashless
 ```
+
+The shim finds the binary relative to itself (`target/release/mashless`), so no
+`PATH` setup is needed. Re-run `cargo build --release` after pulling updates.
 
 **2. Tell your plugin manager to load it from that directory.**
 
@@ -60,20 +76,19 @@ git clone <repo-url> ~/mashless
   dir = vim.fn.expand('~/mashless'), -- the path you cloned into
   name = 'mashless',
   lazy = false,                      -- load at startup so motions are recorded from the first key
+  build = 'cargo build --release',   -- lazy.nvim rebuilds the binary on update
   config = function()
     require('mashless').setup()
   end,
 }
 ```
 
-The `dir` key tells lazy.nvim to use a local directory instead of cloning from
-a remote. Just make sure the path matches step 1.
-
 ### packer.nvim
 
 ```lua
 use {
   '~/mashless', -- the path you cloned into
+  run = 'cargo build --release',
   config = function() require('mashless').setup() end,
 }
 ```
@@ -101,11 +116,33 @@ require('mashless').setup({
 
 ## How it works
 
-`vim.on_key()` receives every keystroke. Each normal/visual key is stored with
-the cursor position it started from. The analyzer groups the stream into runs
-of identical keys; a long run of a one-step motion is the core signal for
-"this could have been a single counted jump or a smarter motion". The report
-module renders the findings as Markdown.
+```
+Neovim
+  └─ lua/mashless/init.lua      thin shim
+        vim.on_key ─┐           (capture: only genuinely *typed* keys)
+        autocmds  ──┤ msgpack-RPC (jobstart rpc=true)
+        commands  ──┘
+                    ▼
+     target/release/mashless    Rust core
+        recorder  → session state
+        analyzer  → inefficiency findings
+        report    → HTML + opens the browser
+```
 
-Recording is wrapped in `pcall` throughout — a bug in mashless can never break
+Neovim's `vim.on_key()` is the only way to see every keystroke, and it has no
+RPC binding — so key capture stays in Lua. The shim keeps **only** the keys the
+user actually typed (`typed` is non-empty); keys Neovim generates internally
+(mapping right-hand sides, or `x` re-feeding `dl`) are dropped, so runs like
+`xxx` stay intact. Each key, plus cursor moves and buffer visits, is forwarded
+to the Rust process, which owns the session, runs the analysis, writes the
+report, and launches your browser.
+
+Capture is wrapped in `pcall` throughout — a bug in mashless can never break
 your editing.
+
+## Development
+
+```sh
+cargo build --release   # build the binary
+cargo test              # analyzer unit tests
+```
