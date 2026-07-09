@@ -235,32 +235,133 @@ fn html_escape(s: &str) -> String {
         .replace('>', "&gt;")
 }
 
-/// Escape HTML, then render `code` spans and **bold** to tags.
-fn inline(s: &str) -> String {
-    let escaped = html_escape(s);
-    // `code` spans: odd-indexed backtick segments become <code>.
+/// Plain-English name for a bare Vim key mnemonic (the text inside `< >`, or a
+/// chord's trailing key). Returns `None` for anything unrecognised.
+fn key_name(s: &str) -> Option<&'static str> {
+    Some(match s.to_ascii_lowercase().as_str() {
+        "cr" | "return" | "enter" => "Enter",
+        "esc" => "Escape",
+        "tab" => "Tab",
+        "bs" => "Backspace",
+        "del" => "Delete",
+        "space" => "Space",
+        "up" => "Up arrow",
+        "down" => "Down arrow",
+        "left" => "Left arrow",
+        "right" => "Right arrow",
+        "home" => "Home",
+        "end" => "End",
+        "pageup" => "Page Up",
+        "pagedown" => "Page Down",
+        "leader" => "leader",
+        _ => return None,
+    })
+}
+
+/// Translate a single `<...>` key token into a readable name, expanding
+/// modifier chords (`<C-o>` → `Ctrl-o`, `<C-S-Right>` → `Ctrl-Shift-Right
+/// arrow`). Returns `None` for tokens we don't recognise, so they're left
+/// verbatim.
+fn expand_key(token: &str) -> Option<String> {
+    let inner = token.strip_prefix('<')?.strip_suffix('>')?;
+    if inner.is_empty() {
+        return None;
+    }
+    if let Some(n) = key_name(inner) {
+        return Some(n.to_string());
+    }
+    // Peel off stacked modifier prefixes: C- S- M- A- D-.
+    const MODS: &[(&str, &str)] = &[
+        ("c-", "Ctrl"),
+        ("s-", "Shift"),
+        ("m-", "Alt"),
+        ("a-", "Alt"),
+        ("d-", "Cmd"),
+    ];
+    let mut parts: Vec<String> = Vec::new();
+    let mut cur = inner;
+    while let Some(&(_, name)) = MODS
+        .iter()
+        .find(|(p, _)| cur.len() > 2 && cur[..2].eq_ignore_ascii_case(p))
+    {
+        parts.push(name.to_string());
+        cur = &cur[2..];
+    }
+    if parts.is_empty() {
+        return None;
+    }
+    let key = key_name(cur).map(str::to_string).unwrap_or_else(|| cur.to_string());
+    parts.push(key);
+    Some(parts.join("-"))
+}
+
+/// Read a code span for Vim key notation and return a plain-English gloss, or
+/// `None` if it contains none. Angle-bracket tokens are expanded in place and
+/// the rest of the span is left as written, e.g. `:{N}<CR>` → `:{N} Enter`.
+fn decipher(span: &str) -> Option<String> {
+    if !span.contains('<') {
+        return None;
+    }
     let mut out = String::new();
-    for (i, seg) in escaped.split('`').enumerate() {
-        if i % 2 == 1 {
-            out.push_str("<code>");
-            out.push_str(seg);
-            out.push_str("</code>");
-        } else {
-            out.push_str(seg);
+    let mut found = false;
+    let mut rest = span;
+    while let Some(lt) = rest.find('<') {
+        out.push_str(&rest[..lt]);
+        let after = &rest[lt..];
+        match after.find('>') {
+            Some(gt) => {
+                let token = &after[..=gt];
+                match expand_key(token) {
+                    Some(name) => {
+                        out.push(' ');
+                        out.push_str(&name);
+                        out.push(' ');
+                        found = true;
+                    }
+                    None => out.push_str(token),
+                }
+                rest = &after[gt + 1..];
+            }
+            None => {
+                out.push_str(after);
+                rest = "";
+                break;
+            }
         }
     }
-    // **bold**: odd-indexed `**` segments become <strong>.
-    let mut bolded = String::new();
-    for (i, seg) in out.split("**").enumerate() {
+    out.push_str(rest);
+    if found {
+        // Collapse the padding we injected around each expansion.
+        Some(out.split_whitespace().collect::<Vec<_>>().join(" "))
+    } else {
+        None
+    }
+}
+
+/// Escape HTML, then render `code` spans and **bold** to tags. Vim key
+/// notation inside a code span is replaced with its plain-English reading.
+fn inline(s: &str) -> String {
+    let mut out = String::new();
+    // `code` spans: odd-indexed backtick segments become <code>.
+    for (i, seg) in s.split('`').enumerate() {
         if i % 2 == 1 {
-            bolded.push_str("<strong>");
-            bolded.push_str(seg);
-            bolded.push_str("</strong>");
+            let shown = decipher(seg).unwrap_or_else(|| seg.to_string());
+            out.push_str(&format!("<code>{}</code>", html_escape(&shown)));
         } else {
-            bolded.push_str(seg);
+            // **bold**: odd-indexed `**` segments become <strong>.
+            let escaped = html_escape(seg);
+            for (j, part) in escaped.split("**").enumerate() {
+                if j % 2 == 1 {
+                    out.push_str("<strong>");
+                    out.push_str(part);
+                    out.push_str("</strong>");
+                } else {
+                    out.push_str(part);
+                }
+            }
         }
     }
-    bolded
+    out
 }
 
 /// Render a tip's flat line list into HTML, grouping `  - ` bullets into lists.
@@ -441,6 +542,47 @@ pub fn write(output_dir: &str, a: &Analysis, session: &Session) -> io::Result<Pa
     let html = render(a, session);
     fs::write(&path, html)?;
     Ok(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decipher_expands_notation() {
+        assert_eq!(decipher("<CR>").as_deref(), Some("Enter"));
+        assert_eq!(decipher("<C-o>").as_deref(), Some("Ctrl-o"));
+        assert_eq!(decipher("<C-i>").as_deref(), Some("Ctrl-i"));
+        assert_eq!(decipher("<Esc>").as_deref(), Some("Escape"));
+        assert_eq!(decipher(":{N}<CR>").as_deref(), Some(":{N} Enter"));
+        assert_eq!(decipher("/text<CR>").as_deref(), Some("/text Enter"));
+        assert_eq!(decipher("<C-o>{motion}").as_deref(), Some("Ctrl-o {motion}"));
+        assert_eq!(decipher("<S-Tab>").as_deref(), Some("Shift-Tab"));
+    }
+
+    #[test]
+    fn decipher_ignores_plain_spans() {
+        assert_eq!(decipher("{N}G"), None);
+        assert_eq!(decipher("diw"), None);
+        // Unknown angle token is left alone (no gloss).
+        assert_eq!(decipher("<Nope>"), None);
+    }
+
+    #[test]
+    fn inline_replaces_notation_with_description() {
+        let html = inline("Use `<C-o>` to go back");
+        assert!(html.contains("<code>Ctrl-o</code>"), "{html}");
+        // A plain code span stays untouched.
+        assert!(inline("Press `dd`").contains("<code>dd</code>"));
+    }
+
+    #[test]
+    fn inline_handles_cheatsheet_entry() {
+        // The exact "Jump to line N" keys column from CHEATSHEET.
+        let html = inline("`{N}G` or `:{N}<CR>`");
+        assert!(html.contains("<code>{N}G</code>"), "{html}");
+        assert!(html.contains("<code>:{N} Enter</code>"), "{html}");
+    }
 }
 
 /// Path of the newest report in `output_dir`, or `None`.
