@@ -65,10 +65,43 @@ fn as_i64(v: Option<&Value>) -> i64 {
         .unwrap_or(0)
 }
 
-/// Open a local file in the user's default browser. Best-effort: any failure
-/// (no display, no browser) is swallowed so it never disrupts Neovim's exit.
+/// Open a local file in the user's default browser, detached so it outlives us.
+///
+/// Neovim runs this plugin as a child job and, on `:q`, tears that job's
+/// process group down the instant we reply to the `report` request. If the
+/// browser launcher is still parented to us in that group, it is killed before
+/// it can hand the URL to the browser — the report lands on disk but nothing
+/// opens. So on Unix we invoke the platform's default-handler (`xdg-open` /
+/// `open`) in a *new* process group with detached stdio; the user's configured
+/// default browser still wins. Elsewhere (and as a fallback) we use the
+/// cross-platform crate. Best-effort throughout: any failure is swallowed so it
+/// never disrupts Neovim's exit.
 fn open_in_browser(path: &Path) {
     let url = format!("file://{}", path.to_string_lossy().replace(' ', "%20"));
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        use std::process::{Command, Stdio};
+
+        let opener = if cfg!(target_os = "macos") {
+            "open"
+        } else {
+            "xdg-open"
+        };
+        let spawned = Command::new(opener)
+            .arg(&url)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .process_group(0) // detach from nvim's job process group
+            .spawn();
+        if spawned.is_ok() {
+            return;
+        }
+        // opener missing — fall through to the cross-platform crate.
+    }
+
     let _ = webbrowser::open(&url);
 }
 
