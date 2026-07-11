@@ -391,8 +391,17 @@ fn render_lines(lines: &[String], out: &mut String) {
     }
 }
 
+/// Share Tech Mono (latin subset, weight 400), embedded as a base64 `woff2`
+/// data URI so the report renders in the intended font fully offline — no
+/// Google Fonts round-trip. The asset is the same file Google Fonts serves.
+const FONT_FACE: &str = concat!(
+    "@font-face{font-family:'Share Tech Mono';font-style:normal;font-weight:400;",
+    "font-display:swap;src:url(data:font/woff2;base64,",
+    include_str!("share_tech_mono.woff2.b64"),
+    ") format('woff2');}\n"
+);
+
 const STYLE: &str = r#"
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 :root {
   --bg: #0a0c12; --surface: #0d1119; --surface-hover: #121a28;
   --border: rgba(79,195,247,0.18); --border-strong: rgba(79,195,247,0.4);
@@ -580,8 +589,8 @@ pub fn render(a: &Analysis, session: &Session) -> String {
     b.push_str("</div>\n");
 
     format!(
-        "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>mashless session report</title>\n<style>{}</style>\n</head>\n<body>\n{}</body>\n</html>\n",
-        STYLE, b
+        "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>mashless session report</title>\n<style>{}{}</style>\n</head>\n<body>\n{}</body>\n</html>\n",
+        FONT_FACE, STYLE, b
     )
 }
 
