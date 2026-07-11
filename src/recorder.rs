@@ -69,7 +69,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             output_dir: ".".into(),
-            min_keys: 20,
+            min_keys: 1,
             vmin: 3,
             hmin: 5,
             xmin: 3,

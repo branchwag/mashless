@@ -9,6 +9,8 @@ The brain is a **Rust** binary; a thin Lua shim only does the things that must
 happen inside Neovim (capturing keys, autocmds, commands) and forwards every
 event to Rust over msgpack-RPC.
 
+![A mashless session report: a dark cyberpunk-styled HTML page with a summary of session length, keystrokes, wasted keystrokes and an efficiency score, followed by ranked tips for more efficient motions.](mashlessdemo.png)
+
 ## What it does
 
 - Records every normal- and visual-mode keystroke for the session (insert-mode
@@ -37,9 +39,11 @@ Written to `stdpath('data')/mashless/` — on Linux that is
 `~/.local/share/nvim/mashless/mashless-YYYY-MM-DD-HHMMSS.html` — and opened in
 your default browser via the OS handler (`xdg-open` / `open` / `start`).
 
-Each report is a self-contained, theme-aware HTML page: a summary (session
-length, keystrokes, an efficiency score, an estimate of wasted keystrokes), the
-ranked tips, and a motion cheat-sheet.
+Each report is a fully self-contained HTML page — no network needed, even the
+font is embedded — styled as a dark "cyberpunk" readout (cyan-on-black, grid
+overlay, Share Tech Mono). It shows a summary (session length, keystrokes, an
+efficiency score, an estimate of wasted keystrokes), the ranked tips, and a
+motion cheat-sheet.
 
 ## Commands
 
@@ -106,7 +110,7 @@ require('mashless').setup()
 require('mashless').setup({
   enabled = true,
   output_dir = vim.fn.stdpath('data') .. '/mashless',
-  min_keys = 20,   -- skip the report for trivially short sessions
+  min_keys = 1,    -- skip the report for trivially short sessions
   vmin = 3,        -- consecutive j/k before it counts as a streak
   hmin = 5,        -- consecutive h/l before it counts as a streak
   xmin = 3,        -- consecutive x before it counts as a streak

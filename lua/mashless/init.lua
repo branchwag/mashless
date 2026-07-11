@@ -14,7 +14,7 @@ M.config = {
   -- Where session reports are written.
   output_dir = vim.fn.stdpath('data') .. '/mashless',
   -- Skip writing a report when fewer than this many keystrokes were recorded.
-  min_keys = 20,
+  min_keys = 1,
   -- Run-length thresholds before a streak counts as inefficient.
   vmin = 3, -- consecutive j/k
   hmin = 5, -- consecutive h/l
