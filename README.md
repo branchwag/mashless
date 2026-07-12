@@ -110,7 +110,7 @@ require('mashless').setup()
 require('mashless').setup({
   enabled = true,
   output_dir = vim.fn.stdpath('data') .. '/mashless',
-  min_keys = 20,   -- skip the report for trivially short sessions
+  min_keys = 1,    -- skip the report for trivially short sessions
   vmin = 3,        -- consecutive j/k before it counts as a streak
   hmin = 5,        -- consecutive h/l before it counts as a streak
   xmin = 3,        -- consecutive x before it counts as a streak
