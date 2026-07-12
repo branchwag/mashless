@@ -1,0 +1,97 @@
+:root {
+  --bg: #0a0c12; --surface: #0d1119; --surface-hover: #121a28;
+  --border: rgba(79,195,247,0.18); --border-strong: rgba(79,195,247,0.4);
+  --fg: #d8f0ff; --muted: #8ba9bd;
+  --accent: #4fc3f7; --accent-hover: #7fd4fa;
+  --code-bg: rgba(79,195,247,0.08); --code-fg: #7fd4fa;
+  --grid: rgba(79,195,247,0.04);
+  --s1: #50c878; --s2: #fab432; --s3: #ff5470;
+  --mono: "Share Tech Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.65 var(--mono);
+  -webkit-font-smoothing: antialiased;
+}
+/* Faint cyber grid overlay, fixed behind all content */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.wrap { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+
+/* Uppercase, letter-spaced "eyebrow" label with a leading accent tick */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: .55rem;
+  font-size: .7rem; line-height: 1; letter-spacing: .28em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 1rem;
+}
+.eyebrow::before { content: ""; width: 1.4rem; height: 1px; background: currentColor; opacity: .6; }
+
+header h1 {
+  margin: 0 0 .4rem; font-size: 2rem; font-weight: 400; letter-spacing: .01em;
+  text-shadow: 0 0 18px rgba(79,195,247,.35);
+}
+header .date { color: var(--muted); font-size: .85rem; text-transform: uppercase; letter-spacing: .1em; }
+
+h2 {
+  font-size: 1.15rem; font-weight: 400; text-transform: uppercase; letter-spacing: .16em;
+  margin: 3rem 0 1.25rem; padding-left: .9rem; position: relative;
+}
+h2::before {
+  content: ""; position: absolute; left: 0; top: .1em; bottom: .1em; width: 3px;
+  background: var(--accent); box-shadow: 0 0 12px rgba(79,195,247,.6);
+}
+
+code {
+  background: var(--code-bg); color: var(--code-fg);
+  padding: .12em .45em; border: 1px solid var(--border); font-size: .88em; font-family: var(--mono);
+}
+/* Share Tech Mono has no bold weight; emphasise with accent + glow instead */
+strong { color: var(--accent); font-weight: 400; text-shadow: 0 0 12px rgba(79,195,247,.3); }
+
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .75rem; list-style: none; padding: 0; margin: 0; }
+.summary li {
+  background: var(--surface); border: 1px solid var(--border); padding: .9rem 1rem;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.summary li:hover { border-color: var(--border-strong); box-shadow: 0 0 26px -8px rgba(79,195,247,.5); }
+.summary .k { display: block; color: var(--muted); font-size: .7rem; text-transform: uppercase; letter-spacing: .18em; margin-bottom: .3rem; }
+.summary .v { font-size: 1.5rem; color: var(--accent); text-shadow: 0 0 14px rgba(79,195,247,.3); }
+.files { color: var(--muted); font-size: .9rem; margin: 1.25rem 0 0; }
+.files code { font-size: .82em; }
+
+.tip {
+  background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--s2);
+  padding: 1.1rem 1.35rem; margin: 1rem 0;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.tip:hover { border-color: var(--border-strong); box-shadow: 0 0 26px -10px rgba(79,195,247,.4); }
+.tip.s1 { border-left-color: var(--s1); }
+.tip.s2 { border-left-color: var(--s2); }
+.tip.s3 { border-left-color: var(--s3); }
+.tip h3 { margin: 0 0 .6rem; font-size: 1.05rem; font-weight: 400; display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
+.tip p { margin: .5rem 0; }
+.tip ul { margin: .5rem 0; padding-left: 1.3rem; }
+.tip li { margin: .3rem 0; }
+.tip li::marker { color: var(--accent); }
+
+.badge {
+  font-size: .62rem; letter-spacing: .16em; text-transform: uppercase;
+  padding: .25em .6em; border: 1px solid currentColor; white-space: nowrap;
+}
+.badge.s1 { color: var(--s1); }
+.badge.s2 { color: var(--s2); }
+.badge.s3 { color: var(--s3); }
+
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+table th, table td { text-align: left; padding: .55rem .8rem; border-bottom: 1px solid var(--border); }
+table th { color: var(--accent); font-weight: 400; text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; }
+table tr:hover td { background: var(--surface-hover); }
+
+.clean { background: var(--surface); border: 1px solid var(--border); padding: 1.5rem; }
+footer { margin-top: 3.5rem; color: var(--muted); font-size: .8rem; border-top: 1px solid var(--border); padding-top: 1.25rem; text-transform: uppercase; letter-spacing: .1em; }
