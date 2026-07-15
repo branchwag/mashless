@@ -414,7 +414,7 @@ pub fn render(a: &Analysis, session: &Session) -> String {
 
     let mut tips = build_tips(a);
     // Most severe first (stable, to preserve build order within a severity).
-    tips.sort_by(|x, y| y.severity.cmp(&x.severity));
+    tips.sort_by_key(|t| std::cmp::Reverse(t.severity));
 
     let mut b = String::new();
     b.push_str("<div class=\"wrap\">\n");
@@ -509,6 +509,22 @@ pub fn write(output_dir: &str, a: &Analysis, session: &Session) -> io::Result<Pa
     Ok(path)
 }
 
+/// Path of the newest report in `output_dir`, or `None`.
+pub fn latest(output_dir: &str) -> Option<PathBuf> {
+    let mut entries: Vec<PathBuf> = fs::read_dir(output_dir)
+        .ok()?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.starts_with("mashless-") && n.ends_with(".html"))
+                .unwrap_or(false)
+        })
+        .collect();
+    entries.sort();
+    entries.pop()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -548,20 +564,4 @@ mod tests {
         assert!(html.contains("<code>{N}G</code>"), "{html}");
         assert!(html.contains("<code>:{N} Enter</code>"), "{html}");
     }
-}
-
-/// Path of the newest report in `output_dir`, or `None`.
-pub fn latest(output_dir: &str) -> Option<PathBuf> {
-    let mut entries: Vec<PathBuf> = fs::read_dir(output_dir)
-        .ok()?
-        .filter_map(|e| e.ok().map(|e| e.path()))
-        .filter(|p| {
-            p.file_name()
-                .and_then(|n| n.to_str())
-                .map(|n| n.starts_with("mashless-") && n.ends_with(".html"))
-                .unwrap_or(false)
-        })
-        .collect();
-    entries.sort();
-    entries.pop()
 }

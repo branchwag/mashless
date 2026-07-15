@@ -154,10 +154,8 @@ pub fn analyze(session: &Session, cfg: &Config) -> Analysis {
                 a.word_runs.push(WordRun { count: r.count });
                 a.wasted += (r.count - 3).max(0);
             }
-        } else if tok == "u" {
-            if r.count >= 4 {
-                a.undo_runs.push(Countable { count: r.count });
-            }
+        } else if tok == "u" && r.count >= 4 {
+            a.undo_runs.push(Countable { count: r.count });
         }
     }
 
