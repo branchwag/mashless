@@ -50,15 +50,15 @@ pub struct Analysis {
 
 /// A maximal run of consecutive identical tokens. `s`/`e` are inclusive
 /// indices into the keylog.
-struct Run {
-    tok: String,
+struct Run<'a> {
+    tok: &'a str,
     count: i64,
     s: usize,
     e: usize,
 }
 
 /// Group the key stream into runs of consecutive identical tokens.
-fn find_runs(keylog: &[KeyEntry]) -> Vec<Run> {
+fn find_runs(keylog: &[KeyEntry]) -> Vec<Run<'_>> {
     let mut runs = Vec::new();
     let n = keylog.len();
     let mut i = 0;
@@ -69,7 +69,7 @@ fn find_runs(keylog: &[KeyEntry]) -> Vec<Run> {
             j += 1;
         }
         runs.push(Run {
-            tok: tok.clone(),
+            tok,
             count: (j - i + 1) as i64,
             s: i,
             e: j,
@@ -98,7 +98,7 @@ pub fn analyze(session: &Session, cfg: &Config) -> Analysis {
     };
 
     for r in &runs {
-        let tok = r.tok.as_str();
+        let tok = r.tok;
 
         if vertical(tok) {
             let is_arrow = tok == "<Up>" || tok == "<Down>";
